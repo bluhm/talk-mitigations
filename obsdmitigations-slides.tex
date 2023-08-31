@@ -1,0 +1,141 @@
+% Copyright (c) 2023 Alexander Bluhm <bluhm@genua.de>
+%
+% Permission to use, copy, modify, and distribute this software for any
+% purpose with or without fee is hereby granted, provided that the above
+% copyright notice and this permission notice appear in all copies.
+%
+% THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+% WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+% MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+% ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+% WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+\documentclass[14pt]{beamer}
+\usetheme{Frankfurt}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{tipa}
+\usepackage{alltt}
+\usepackage{xcolor}
+\usepackage{upquote}
+\usepackage[T1]{fontenc}
+\usepackage{listings}
+\usepackage{textcomp}
+\author{Alexander Bluhm}
+\title{OpenBSD Security Mitigations}
+\institute{genua GmbH\\ \url{bluhm@genua.de}\\ \url{bluhm@openbsd.org}}
+\date{September 2023}
+\let\Tiny\tiny
+
+\begin{document}
+\lstset{language=C}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{Agenda}
+\setcounter{tocdepth}{1}
+\tableofcontents
+\end{frame}
+
+\section{Memory Corruption}
+
+\subsection{Stack Overflow}
+\begin{frame}{Stack Overflow}
+Non executable
+Random gap, random location 1/4
+\end{frame}
+
+\subsection{Heap Overflow}
+\begin{frame}{Heap Overflow}
+Malloc options
+Guard page
+Random chunk order
+Canaries
+\end{frame}
+
+\subsection{Heap Use-After-Free}
+\begin{frame}{Heap Use-After-Free}
+Free unmap
+Junk at alloc
+Junk at free
+SSH Use-After-Free
+Give back at random order
+\end{frame}
+
+\subsection{Return Oriented Programming}
+\begin{frame}{Return Oriented Programming}
+Map stack
+Retpoline
+Fork+Exec
+Signal Cookie
+arm64 BTI \& Intel IBT endbr64
+Random relinking
+\end{frame}
+
+\subsection{mprotect(2)}
+\begin{frame}{mprotect(2)}
+\begin{itemize}
+\item W\^{}X
+\item xonly
+\item mimmutable(2)
+\end{itemize}
+\end{frame}
+
+\subsection{Opportunistic Xonly}
+\begin{frame}[fragile=singleslide]{Opportunistic Xonly}
+\begin{lstlisting}
+addr = mmap(NULL, 4096, PROT_NONE,
+    MAP_PRIVATE | MAP_ANON, -1, 0);
+mprotect(addr, 4096, PROT_READ);
+printf("%p: %08x\n", addr, *(int*)addr);
+mprotect(addr, 4096, PROT_EXEC);
+printf("%p: %08x\n", addr, *(int*)addr);
+\end{lstlisting}
+\begin{verbatim}
+0x73d15433000: 00000000
+0x73d15433000: 00000000
+\end{verbatim}
+\end{frame}
+
+\subsection{Opportunistic Xonly}
+\begin{frame}[fragile=singleslide]{Opportunistic Xonly}
+\begin{lstlisting}
+addr = mmap(NULL, 4096, PROT_NONE,
+    MAP_PRIVATE | MAP_ANON, -1, 0);
+mprotect(addr, 4096, PROT_READ);
+mprotect(addr, 4096, PROT_EXEC);
+printf("%p: %08x\n", addr, *(int*)addr);
+\end{lstlisting}
+\begin{verbatim}
+Segmentation fault (core dumped)
+\end{verbatim}
+\end{frame}
+
+\section{Random Distribution}
+\begin{frame}{Return Oriented Programming}
+arc4random(3)
+getentropy(2)
+ELF header .openbsd.randomdata
+Boot /etc/random.seed
+\end{frame}
+
+\section{Not yet}
+\begin{frame}{Not Yet}
+ARM pointer authentication
+shadow stack
+\end{frame}
+
+\subsection{Questions}
+\begin{frame}{Questions}
+\begin{center}
+\begin{tikzpicture}
+\draw [font=\Huge] node {?};
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\end{document}
