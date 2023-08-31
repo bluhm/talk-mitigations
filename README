@@ -1,0 +1,22 @@
+OpenBSD Security - Attack Mitigations
+
+The environment for userland application in OpenBSD tries to be an
+unpleasant place for attackers.  Most of the binary exploitation
+mitigation are listed on http://www.openbsd.org/innovations.html .
+This talk will give a deeper insight in a bunch of them.  What kind
+of attacks should they stop and how do mitigations work together?
+
+These OpenBSD features were not written all at once, they evolved
+during the past 20 years.  What was necessary to implement them,
+and what had to be done that modern POSIX compatible software runs
+fine on OpenBSD?  You have to hit the small line between things
+that 3rd party software expects, and the ABI allows to do.  There
+was a lot of pain for the ports maintainers to fix the fallout.
+
+Alexander Bluhm is an OpenBSD developer since 2007.  His main area
+of work is the network stack.  In the recent years focus was on
+multi processor performance.  He is employed at genua, a German
+firewall manufacturer, who is using OpenBSD an a secure and stable
+base for its products.  Other areas of interest are the errata
+process, testing, maintaining Perl ports, and fixing all kinds of
+bugs.
