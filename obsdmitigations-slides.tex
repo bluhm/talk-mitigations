@@ -12,7 +12,7 @@
 % ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 % OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-\documentclass[14pt]{beamer}
+\documentclass[14pt,aspectratio=169]{beamer}
 \usetheme{Frankfurt}
 \usepackage{tikz}
 \usepackage{graphicx}
@@ -21,7 +21,6 @@
 \usepackage{xcolor}
 \usepackage{upquote}
 \usepackage[T1]{fontenc}
-\usepackage{listings}
 \usepackage{textcomp}
 \author{Alexander Bluhm}
 \title{OpenBSD Security Mitigations}
@@ -30,7 +29,6 @@
 \let\Tiny\tiny
 
 \begin{document}
-\lstset{language=C}
 
 \begin{frame}
 \titlepage
@@ -45,88 +43,117 @@
 
 \subsection{Stack Overflow}
 \begin{frame}{Stack Overflow}
-Non executable
-Random gap, random location 1/4
+\begin{itemize}
+  \item non executable
+  \item random gap, random location
+\end{itemize}
 \end{frame}
 
 \subsection{Heap Overflow}
 \begin{frame}{Heap Overflow}
-Malloc options
-Guard page
-Random chunk order
-Canaries
+\begin{itemize}
+  \item Malloc options
+  \item Guard page
+  \item Random chunk order
+  \item Canaries
+\end{itemize}
 \end{frame}
 
 \subsection{Heap Use-After-Free}
 \begin{frame}{Heap Use-After-Free}
-Free unmap
-Junk at alloc
-Junk at free
-SSH Use-After-Free
-Give back at random order
+\begin{itemize}
+  \item unmap freed
+  \item junk at alloc
+  \item junk at free
+  \item SSH use-after-free
+  \item random order
+\end{itemize}
 \end{frame}
 
 \subsection{Return Oriented Programming}
 \begin{frame}{Return Oriented Programming}
-Map stack
-Retpoline
-Fork+Exec
-Signal Cookie
-arm64 BTI \& Intel IBT endbr64
+\begin{itemize}
+  \item map stack
+  \item retpoline
+  \item fork+exec
+  \item signal cookie
+  \item arm64 BTI \& Intel IBT endbr64
 Random relinking
+\end{itemize}
 \end{frame}
 
 \subsection{mprotect(2)}
 \begin{frame}{mprotect(2)}
 \begin{itemize}
-\item W\^{}X
-\item xonly
-\item mimmutable(2)
+  \item W\^{}X
+  \item xonly
+  \item mimmutable(2)
+  \item MAP\_STACK
+  \item MAP\_CONCEAL
 \end{itemize}
 \end{frame}
 
-\subsection{Opportunistic Xonly}
-\begin{frame}[fragile=singleslide]{Opportunistic Xonly}
-\begin{lstlisting}
-addr = mmap(NULL, 4096, PROT_NONE,
-    MAP_PRIVATE | MAP_ANON, -1, 0);
-mprotect(addr, 4096, PROT_READ);
-printf("%p: %08x\n", addr, *(int*)addr);
-mprotect(addr, 4096, PROT_EXEC);
-printf("%p: %08x\n", addr, *(int*)addr);
-\end{lstlisting}
+\subsection{Opportunistic xonly}
+\begin{frame}[fragile=singleslide]{Opportunistic xonly}
 \begin{verbatim}
-0x73d15433000: 00000000
-0x73d15433000: 00000000
+  addr = mmap(NULL, 4096, PROT_NONE,
+      MAP_PRIVATE | MAP_ANON, -1, 0);
+  mprotect(addr, 4096, PROT_READ);
+  printf("%p: %08x\n", addr, *(int* )addr);
+  mprotect(addr, 4096, PROT_EXEC);
+  printf("%p: %08x\n", addr, *(int* )addr);
+\end{verbatim}
+\begin{verbatim}
+  0x73d15433000: 00000000
+  0x73d15433000: 00000000
 \end{verbatim}
 \end{frame}
 
-\subsection{Opportunistic Xonly}
-\begin{frame}[fragile=singleslide]{Opportunistic Xonly}
-\begin{lstlisting}
-addr = mmap(NULL, 4096, PROT_NONE,
-    MAP_PRIVATE | MAP_ANON, -1, 0);
-mprotect(addr, 4096, PROT_READ);
-mprotect(addr, 4096, PROT_EXEC);
-printf("%p: %08x\n", addr, *(int*)addr);
-\end{lstlisting}
+\subsection{Trap xonly}
+\begin{frame}[fragile=singleslide]{Trap xonly}
 \begin{verbatim}
-Segmentation fault (core dumped)
+  addr = mmap(NULL, 4096, PROT_NONE,
+      MAP_PRIVATE | MAP_ANON, -1, 0);
+  mprotect(addr, 4096, PROT_READ);
+  mprotect(addr, 4096, PROT_EXEC);
+  printf("%p: %08x\n", addr, *(int* )addr);
+\end{verbatim}
+\begin{verbatim}
+  Segmentation fault (core dumped)
 \end{verbatim}
 \end{frame}
 
-\section{Random Distribution}
-\begin{frame}{Return Oriented Programming}
-arc4random(3)
-getentropy(2)
-ELF header .openbsd.randomdata
-Boot /etc/random.seed
+\section{Random}
+
+\subsection{Random Everywhere}
+\begin{frame}{Random Everywhere}
+\begin{itemize}
+  \item arc4random(3)
+  \item arc4random\_uniform(3)
+  \item getentropy(2)
+  \item ELF header .openbsd.randomdata
+  \item boot /etc/random.seed
+\end{itemize}
+\end{frame}
+
+\subsection{Address Space Layout Randomization}
+\begin{frame}{Address Space Layout Randomization}
+\begin{enumerate}
+  \item shared library mapping
+  \item heap mmap(2)
+  \item stack gap
+  \item PIE program text
+  \item relink libc
+  \item relink sshd(8)
+\end{enumerate}
 \end{frame}
 
 \section{Not yet}
 \begin{frame}{Not Yet}
-ARM pointer authentication
-shadow stack
+\begin{itemize}
+  \item ARM pointer authentication
+  \item shadow stack
+\end{itemize}
 \end{frame}
 
 \subsection{Questions}
