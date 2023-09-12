@@ -52,10 +52,10 @@
 \subsection{Heap Overflow}
 \begin{frame}{Heap Overflow}
 \begin{itemize}
-  \item Malloc options
-  \item Guard page
-  \item Random chunk order
-  \item Canaries
+  \item malloc(3) options
+  \item guard page
+  \item random chunk order
+  \item canaries
 \end{itemize}
 \end{frame}
 
@@ -147,6 +147,95 @@ Random relinking
   \item relink sshd(8)
 \end{enumerate}
 \end{frame}
+
+\subsection{Address Space Layout}
+\begin{frame}{Address Space Layout}
+\begin{tikzpicture}
+\path
+    (0,0) node [draw,below,minimum width=2cm,minimum height=6cm] (proc) {}
+    +(0,-0.5) node [draw,minimum width=2cm,fill=red] (stack) {stack}
+    +(0,-1.8) node [draw,minimum width=2cm,fill=green] (jit) {JIT}
+    +(0,-3.1) node [draw,minimum width=2cm,fill=blue] (bss) {bss}
+    +(0,-3.9) node [draw,minimum width=2cm,fill=yellow] (data) {data}
+    +(0,-4.7) node [draw,minimum width=2cm,fill=brown] (rodata) {rodata}
+    +(0,-5.5) node [draw,minimum width=2cm,fill=magenta] (text) {text};
+\draw (stack.east) [<-] -- +(1,0) node [anchor=west] {read/write};
+\draw (jit.east) +(1,0) node [anchor=south west] (mwrite)
+    {mprotect(PROT\_WRITE)} (mwrite.west) [->] -- (jit.east);
+\draw (jit.east) +(1,0) node [anchor=north west] (mexec)
+    {mprotect(PROT\_EXEC)} (mexec.west) [->] -- (jit.east);
+\draw (bss.east) [<-] -- +(1,0) node [anchor=west] {read/write};
+\draw (data.east) [<-] -- +(1,0) node [anchor=west] {read/write};
+\draw (rodata.east) [<-] -- +(1,0) node [anchor=west] {read};
+\draw (text.east) [<-] -- +(1,0) node [anchor=west] {read/exec};
+\end{tikzpicture}
+\end{frame}
+
+\subsection{Special Protection}
+\begin{frame}{Special Protection}
+\end{frame}
+
+\subsection{Kernel Exec}
+\begin{frame}{Kernel Exec}
+\begin{itemize}
+  \item check argc > 0
+  \item random stack
+  \item random signal cookie
+  \item exec pledge
+  \item setuid open stdin, stdout, stderr
+\end{itemize}
+\end{frame}
+
+\subsection{Dynamic Loader}
+\begin{frame}{Dynamic Loader}
+\begin{itemize}
+  \item init random getentropy(2)
+  \item fix permissions mimmutable(2)
+  \item random layout mmap(2)
+  \item syscall area msyscall(2)
+  \item exec area pinsyscall(2)
+  \item lazy-binding kbind(2)
+\end{itemize}
+\end{frame}
+
+\subsection{Others}
+\begin{frame}{Others}
+\begin{itemize}
+  \item exec options
+  \item xonly
+  \item reallocarray(3)
+  \item explicit\_bzero(3)
+  \item sigreturn(2)
+  \item mount options
+  \item printf(3) \%n
+  \item fork+exec
+  \item otto malloc in practice
+  \item secure by default and enforced
+  \item ssh attack -> process trace, libc malloc reuse
+  \item ssh agent -> executable stack enforced
+\end{itemize}
+\end{frame}
+
+\subsection{SSH Agent Library Exploit}
+\begin{frame}{SSH Agent Library Exploit}
+dlopen(3) 4 libraries:
+\begin{itemize}
+  \item ELF header executable stack 
+  \item init signal handler SIGSEGV
+  \item ELF flag NODELETE
+  \item on load segmentation fault
+\end{itemize}
+\end{frame}
+
+\subsection{Default and Force}
+\begin{frame}{Default and Force}
+\begin{itemize}
+  \item control: kernel, libc, base
+  \item adapt: ports
+  \item last resort: program and mount flags
+\end{itemize}
+\end{frame}
+
 
 \section{Not yet}
 \begin{frame}{Not Yet}
