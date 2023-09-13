@@ -82,6 +82,7 @@
   \item guard page
   \item random chunk order
   \item canaries
+  \item meta data mprotect(2) and mimmutable(2)
 \end{itemize}
 \end{frame}
 
@@ -103,6 +104,7 @@
   \item retguard
   \item fork+exec
   \item sigreturn(2) cookie
+  \item setjmp(3), longjmp(3) cookie
   \item ARM BTI \& Intel IBT endbr64
   \item random relinking
 \end{itemize}
@@ -116,6 +118,14 @@
   \item mimmutable(2)
   \item MAP\_STACK
   \item MAP\_CONCEAL
+\end{itemize}
+\end{frame}
+
+\subsection{Hardware xonly}
+\begin{frame}{Hardware xonly}
+\begin{itemize}
+  \item arm64, riscv64 have RWX
+  \item new amd64 have PKU
 \end{itemize}
 \end{frame}
 
@@ -240,13 +250,33 @@
 \end{itemize}
 \end{frame}
 
+\subsection{Lazy Binding kbind(2)}
+\begin{frame}{Lazy Binding kbind(2)}
+\begin{tikzpicture}
+\draw
+  node [draw,minimum height=3cm,minimum width=1.5cm] (prog) {Prog};
+\draw (prog.east) [->] -- ++(4,0) node [midway,above] {function()} -- ++(0,-1)
+  node [draw,below] (plt) {PLT};
+\draw (plt.south) [<-,dotted,thick] -- ++(0,-2)
+  node [midway,right,align=center] {read\\ indirect\\ jump}
+  node [draw,solid,thin,below] (got) {GOT};
+\draw (got.west) [<-,dotted,thick,red] -- ++(-2,0)
+  node [midway,below,align=center] {modify\\ function address}
+  node [draw,solid,thin,left,black] (ldso) {ld.so};
+\draw (plt.west) [<->] -|
+  node [near end,left,align=center] {lazy\\ binding} (ldso);
+\draw (plt.east) [->] -- ++(3,0) node [midway,above] {function()}
+  node [draw,right,minimum height=3cm,minimum width=1.5cm] (lib) {Lib};
+\end{tikzpicture}
+\end{frame}
+
 \section{Userland Programming}
 
 \subsection{Pledge and Unveil}
 \begin{frame}{Pledge and Unveil}
 \begin{itemize}
-  \item ps -ax -o stat | grep p -> 86% pledged
-  \item ps -ax -o stat | grep U -> 39% unveiled
+  \item ps -ax -o stat | grep p $\Rightarrow$ 86\% pledged
+  \item ps -ax -o stat | grep U $\Rightarrow$ 39\% unveiled
   \item easy to use
   \item daily violation mail
   \item lastcomm(1), acct(5), accton(8)
@@ -369,6 +399,7 @@ dlopen(3) 4 libraries:
 \begin{itemize}
   \item ARM pointer authentication
   \item shadow stack
+  \item remove syscall(2)
 \end{itemize}
 \end{frame}
 
