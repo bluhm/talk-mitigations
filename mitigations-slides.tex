@@ -102,9 +102,9 @@
   \item map stack
   \item retguard
   \item fork+exec
-  \item signal cookie
-  \item arm64 BTI \& Intel IBT endbr64
-Random relinking
+  \item sigreturn(2) cookie
+  \item ARM BTI \& Intel IBT endbr64
+  \item random relinking
 \end{itemize}
 \end{frame}
 
@@ -197,8 +197,24 @@ Random relinking
 \end{tikzpicture}
 \end{frame}
 
-\subsection{Special Protection}
-\begin{frame}{Special Protection}
+\section{System Calls}
+
+\subsection{Mapping Protection}
+\begin{frame}[fragile=singleslide]{Mapping Protection}
+\begin{verbatim}
+  sleep 1 & procmap $!
+\end{verbatim}
+\begin{itemize}
+  \item \verb/Start End/ random
+  \item \verb/rwxSeIpc/ xonly, stack, system call entry, immutable
+  \begin{itemize}
+    \item \verb/--x-eIp+/ text
+    \item \verb/r----Ip+/ read only
+    \item \verb/rw---Ip-/ data
+    \item \verb/rw----p-/ heap
+    \item \verb/rw-S-Ip-/ stack
+  \end{itemize}
+\end{itemize}
 \end{frame}
 
 \subsection{Kernel Exec}
@@ -224,22 +240,114 @@ Random relinking
 \end{itemize}
 \end{frame}
 
-\subsection{Others}
-\begin{frame}{Others}
+\section{Userland Programming}
+
+\subsection{Pledge and Unveil}
+\begin{frame}{Pledge and Unveil}
 \begin{itemize}
-  \item BTI and IBT
-  \item exec options
-  \item xonly
+  \item ps -ax -o stat | grep p -> 86% pledged
+  \item ps -ax -o stat | grep U -> 39% unveiled
+  \item easy to use
+  \item daily violation mail
+  \item lastcomm(1), acct(5), accton(8)
+\end{itemize}
+\end{frame}
+
+\subsection{Privilege Separation in Processes}
+\begin{frame}{Privilege Separation in Processes}
+\begin{itemize}
+  \item identify isolated tasks with high risk
+  \item \texttt{socketpair(2)}
+  \item \texttt{fork(2)}
+  \item \texttt{chroot(2)}
+  \item \texttt{setuid(2)}
+  \item \texttt{pledge(2)}
+  \item \texttt{imsg\_init(3)}
+  \item file descriptor passing
+\end{itemize}
+\end{frame}
+
+\subsection{Programs with Privsep}
+\begin{frame}{Programs with Privsep}
+\begin{tikzpicture}
+\draw [grow=right,level distance=2cm,sibling distance=3cm]
+  (0,0) node [draw,circle,align=center] (ospfd) {ospfd}
+  [edge from parent/.style={draw,->}]
+  child { node [draw,circle,align=center] (rde) {route\\ decision\\ engine} }
+  child { node [draw,circle,align=center] (ospfe) {ospf\\ engine} };
+\draw [grow'=right,level distance=2cm,sibling distance=2cm]
+  (4.3,0) node [draw,circle,align=center] (relayd) {relayd}
+  [edge from parent/.style={draw,->}]
+  child { node [draw,circle,align=center] (proc1) {proc1} }
+  child { node [draw,circle,align=center] (proc2) {proc2} }
+  child { node [draw,circle,align=center,yshift=-1cm] (procn) {procN} };
+\draw [grow=down,level distance=3cm]
+  (8.5,1) node [draw,circle,align=center] (parent) {priv\\ parent}
+  [edge from parent/.style={draw,->}]
+  child { node [draw,circle,align=center] (syslogd) {syslogd} };
+\end{tikzpicture}
+\end{frame}
+
+\subsection{fork+exec}
+\begin{frame}{fork+exec}
+\begin{tikzpicture}
+\path
+  (0,0) node [draw,below,minimum width=2cm,minimum height=6cm] (p) {}
+  +(0,-0.6) node [draw,minimum width=2cm,fill=red,minimum height=1cm] {stack}
+  +(0,-1.8) node [draw,minimum width=2cm,fill=green] {heap}
+  +(0,-3.2) node [draw,minimum width=2cm,fill=yellow] {lib1}
+  +(0,-5.5) node [draw,minimum width=2cm,fill=magenta] {prog};
+\path
+  (4,0) node [draw,below,minimum width=2cm,minimum height=6cm] (f) {}
+  +(0,-0.6) node [draw,minimum width=2cm,fill=red,minimum height=1cm] {stack}
+  +(0,-1.8) node [draw,minimum width=2cm,fill=green] {heap}
+  +(0,-3.2) node [draw,minimum width=2cm,fill=yellow] {lib1}
+  +(0,-5.5) node [draw,minimum width=2cm,fill=magenta] {prog};
+\path
+  (8.5,0) node [draw,below,minimum width=2cm,minimum height=6cm] (e) {}
+  +(0,-0.6) node [draw,minimum width=2cm,fill=red] {stack}
+  +(0,-4.1) node [draw,minimum width=2cm,fill=yellow] {lib1}
+  +(0,-5.2) node [draw,minimum width=2cm,fill=magenta] {prog};
+\draw [->] (p) to [thick,bend left,edge label={fork(2)}] (f);
+\draw [->] (f) to [thick,bend left,edge label={execve(2)}] (e);
+\end{tikzpicture}
+\end{frame}
+
+\subsection{API Changes}
+\begin{frame}{API Changes}
+\begin{itemize}
+  \item strlcpy(3), strlcat(3)
   \item reallocarray(3)
   \item explicit\_bzero(3)
-  \item sigreturn(2)
-  \item mount options
-  \item printf(3) \%n
-  \item fork+exec
-  \item otto malloc in practice
-  \item secure by default and enforced
-  \item ssh attack -> process trace, libc malloc reuse
-  \item ssh agent -> executable stack enforced
+  \item freezero(3)
+  \item malloc\_conceal(3)
+  \item printf(3) without \%n
+\end{itemize}
+\end{frame}
+
+\subsection{Ports Pain}
+\begin{frame}{Ports Pain}
+\begin{itemize}
+  \item BTI and IBT
+  \item xonly
+  \item map stack
+  \item W\^{}X
+  \item otto malloc
+\end{itemize}
+\end{frame}
+
+\subsection{Default and Force}
+\begin{frame}{Default and Force}
+\begin{itemize}
+  \item control: kernel, libc, base
+  \item adapt: ports
+  \item last resort: mount and program flags
+  \begin{itemize}
+    \item mount -o wxallowed
+    \item ld -z wxneeded
+    \item ld -z nobtcfi
+    \item NOT execstack, force-bti, force-ibt
+  \end{itemize}
 \end{itemize}
 \end{frame}
 
@@ -254,21 +362,23 @@ dlopen(3) 4 libraries:
 \end{itemize}
 \end{frame}
 
-\subsection{Default and Force}
-\begin{frame}{Default and Force}
-\begin{itemize}
-  \item control: kernel, libc, base
-  \item adapt: ports
-  \item last resort: program and mount flags
-\end{itemize}
-\end{frame}
+\section{Final}
 
-
-\section{Not yet}
+\subsection{Not yet}
 \begin{frame}{Not Yet}
 \begin{itemize}
   \item ARM pointer authentication
   \item shadow stack
+\end{itemize}
+\end{frame}
+
+\subsection{Conclusion}
+\begin{frame}{Conclusion}
+\begin{itemize}
+  \item powerful combination
+  \item cheap and effective
+  \item always on
+  \item works with ports
 \end{itemize}
 \end{frame}
 
