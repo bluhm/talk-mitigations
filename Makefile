@@ -1,9 +1,9 @@
-NAME =		obsdmitigations-slides
+NAME =		mitigations-slides
 
 CLEAN_FILES +=	${NAME:=.nav}
 CLEAN_FILES +=	${NAME:=.snm}
 
-obsdsecurity-slides.dvi: images
+#mitigations-slides.dvi: images
 
 images:
 	make -C img all
