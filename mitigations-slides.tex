@@ -15,6 +15,7 @@
 \documentclass[14pt,aspectratio=169]{beamer}
 \usetheme{Frankfurt}
 \usepackage{tikz}
+\usetikzlibrary{positioning}
 \usepackage{graphicx}
 \usepackage{tipa}
 \usepackage{alltt}
@@ -43,10 +44,35 @@
 
 \subsection{Stack Overflow}
 \begin{frame}{Stack Overflow}
-\begin{itemize}
+\begin{enumerate}
+  \item random gap
   \item non executable
-  \item random gap, random location
-\end{itemize}
+  \item stack protector
+  \item retguard
+  \item immutable
+  \item random location
+\end{enumerate}
+\end{frame}
+
+\subsection{Stack Layout}
+\begin{frame}{Stack Layout}
+\begin{tikzpicture}
+\path
+  (0,0) node [draw,below,minimum width=2cm,minimum height=6cm] (proc) {}
+  node [draw,minimum width=2cm,anchor=north,minimum height=2cm] (loc) {random}
+  node [draw,minimum width=2cm,below=0 of loc.south,
+    minimum height=.5cm] (gap) {gap}
+  node [draw,minimum width=2cm,below=0 of gap.south,fill=red,
+    minimum height=1.5cm] (stack) {stack}
+  node [above=.08cm of stack.south east] (cookie) {};
+\draw (loc.east) [<-] -- +(1,0) node [anchor=west]
+  {26 bit within 64 bit address space};
+\draw (gap.east) [<-] -- +(1,0) node [anchor=west] {random 12 bit within page};
+\draw (cookie.north) -- +(-2,0);
+\draw (cookie.center) -- +(-2,0) (cookie.south) -- +(-2,0);
+\draw (cookie.center) [<-] -- +(1,0) node [anchor=west] {stack cookies};
+\draw (stack.south) [->] -- +(0,-1);
+\end{tikzpicture}
 \end{frame}
 
 \subsection{Heap Overflow}
@@ -66,7 +92,7 @@
   \item junk at alloc
   \item junk at free
   \item SSH use-after-free
-  \item random order
+  \item limit chunk reuse
 \end{itemize}
 \end{frame}
 
@@ -74,7 +100,7 @@
 \begin{frame}{Return Oriented Programming}
 \begin{itemize}
   \item map stack
-  \item retpoline
+  \item retguard
   \item fork+exec
   \item signal cookie
   \item arm64 BTI \& Intel IBT endbr64
@@ -123,7 +149,7 @@ Random relinking
 \end{verbatim}
 \end{frame}
 
-\section{Random}
+\section{Randomness}
 
 \subsection{Random Everywhere}
 \begin{frame}{Random Everywhere}
@@ -201,6 +227,7 @@ Random relinking
 \subsection{Others}
 \begin{frame}{Others}
 \begin{itemize}
+  \item BTI and IBT
   \item exec options
   \item xonly
   \item reallocarray(3)
