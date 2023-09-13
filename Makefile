@@ -1,5 +1,8 @@
 NAME =		obsdmitigations-slides
 
+CLEAN_FILES +=	${NAME:=.nav}
+CLEAN_FILES +=	${NAME:=.snm}
+
 obsdsecurity-slides.dvi: images
 
 images:
