@@ -102,6 +102,7 @@
 \begin{itemize}
   \item map stack
   \item retguard
+  \item avoid 0xc3 due to \%rbx
   \item fork+exec
   \item \texttt{sigreturn(2)} cookie
   \item \texttt{setjmp(3)}, \texttt{longjmp(3)} cookie
@@ -373,8 +374,8 @@
   +(0,-0.6) node [draw,minimum width=2cm,fill=red] {stack}
   +(0,-4.1) node [draw,minimum width=2cm,fill=yellow] {lib1}
   +(0,-5.2) node [draw,minimum width=2cm,fill=magenta] {prog};
-\draw [->] (p) to [thick,bend left,edge label={fork(2)}] (f);
-\draw [->] (f) to [thick,bend left,edge label={execve(2)}] (e);
+\draw [->] (p) to [thick,bend left,edge label={\texttt{fork(2)}}] (f);
+\draw [->] (f) to [thick,bend left,edge label={\texttt{execve(2)}}] (e);
 \end{tikzpicture}
 \end{frame}
 
@@ -427,7 +428,7 @@
 
 \subsection{SSH Agent Library Exploit}
 \begin{frame}{SSH Agent Library Exploit}
-dlopen(3) 4 libraries:
+\texttt{dlopen(3)} 4 libraries:
 \begin{itemize}
   \item ELF header executable stack
   \item init signal handler SIGSEGV
@@ -443,7 +444,7 @@ dlopen(3) 4 libraries:
 \begin{itemize}
   \item ARM pointer authentication
   \item shadow stack
-  \item remove syscall(2)
+  \item remove \texttt{syscall(2)}
 \end{itemize}
 \end{frame}
 
