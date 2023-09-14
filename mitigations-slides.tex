@@ -25,7 +25,7 @@
 \usepackage{textcomp}
 \author{Alexander Bluhm}
 \title{OpenBSD Security Mitigations}
-\institute{genua GmbH\\ \url{bluhm@genua.de}\\ \url{bluhm@openbsd.org}}
+\institute{\url{bluhm@genua.de}\\ \url{bluhm@openbsd.org}}
 \date{September 2023}
 \let\Tiny\tiny
 
@@ -78,11 +78,11 @@
 \subsection{Heap Overflow}
 \begin{frame}{Heap Overflow}
 \begin{itemize}
-  \item malloc(3) options
+  \item \texttt{malloc(3)} options
   \item guard page
   \item random chunk order
   \item canaries
-  \item meta data mprotect(2) and mimmutable(2)
+  \item meta data \texttt{mprotect(2)} and \texttt{mimmutable(2)}
 \end{itemize}
 \end{frame}
 
@@ -103,22 +103,53 @@
   \item map stack
   \item retguard
   \item fork+exec
-  \item sigreturn(2) cookie
-  \item setjmp(3), longjmp(3) cookie
+  \item \texttt{sigreturn(2)} cookie
+  \item \texttt{setjmp(3)}, \texttt{longjmp(3)} cookie
   \item ARM BTI \& Intel IBT endbr64
   \item random relinking
 \end{itemize}
 \end{frame}
 
-\subsection{mprotect(2)}
-\begin{frame}{mprotect(2)}
+\subsection{Mapping Protection}
+\begin{frame}{Mapping Protection}
 \begin{itemize}
-  \item W\^{}X
-  \item xonly
-  \item mimmutable(2)
-  \item MAP\_STACK
-  \item MAP\_CONCEAL
+  \item \texttt{mprotect(2)}
+  \begin{itemize}
+    \item W\^{}X
+    \item xonly
+  \end{itemize}
+  \item \texttt{mimmutable(2)}
+  \item \texttt{mmap(2)}
+  \begin{itemize}
+    \item MAP\_STACK
+    \item MAP\_CONCEAL
+  \end{itemize}
 \end{itemize}
+\end{frame}
+
+\subsection{Address Space Protection}
+\begin{frame}{Address Space Protection}
+\begin{tikzpicture}
+\path
+  (0,0) node [draw,below,minimum width=2cm,minimum height=6cm] (proc) {}
+  +(0,-0.5) node [draw,minimum width=2cm,fill=red] (stack) {stack}
+  +(0,-1.4) node [draw,minimum width=2cm,fill=green] (jit) {JIT}
+  +(0,-2.3) node [draw,minimum width=2cm,fill=green] (heap) {heap}
+  +(0,-3.1) node [draw,minimum width=2cm,fill=blue] (bss) {bss}
+  +(0,-3.9) node [draw,minimum width=2cm,fill=yellow] (data) {data}
+  +(0,-4.7) node [draw,minimum width=2cm,fill=brown] (rodata) {rodata}
+  +(0,-5.5) node [draw,minimum width=2cm,fill=magenta] (text) {text};
+\draw (stack.east) [<-] -- +(1,0) node [anchor=west] {read/write immutable};
+\draw (jit.east) +(1,-.1) node [anchor=south west] (mwrite)
+  {mprotect(PROT\_WRITE)} (mwrite.west) [->] -- (jit.east);
+\draw (jit.east) +(1,.1) node [anchor=north west] (mexec)
+  {mprotect(PROT\_EXEC)} (mexec.west) [->] -- (jit.east);
+\draw (heap.east) [<-] -- +(1,0) node [anchor=west] {read/write};
+\draw (bss.east) [<-] -- +(1,0) node [anchor=west] {read/write immutable};
+\draw (data.east) [<-] -- +(1,0) node [anchor=west] {read/write immutable};
+\draw (rodata.east) [<-] -- +(1,0) node [anchor=west] {read immutable};
+\draw (text.east) [<-] -- +(1,0) node [anchor=west] {exec immutable};
+\end{tikzpicture}
 \end{frame}
 
 \subsection{Hardware xonly}
@@ -135,9 +166,9 @@
   addr = mmap(NULL, 4096, PROT_NONE,
       MAP_PRIVATE | MAP_ANON, -1, 0);
   mprotect(addr, 4096, PROT_READ);
-  printf("%p: %08x\n", addr, *(int* )addr);
+  printf("%p: %08x\n", addr, *(int *)addr);
   mprotect(addr, 4096, PROT_EXEC);
-  printf("%p: %08x\n", addr, *(int* )addr);
+  printf("%p: %08x\n", addr, *(int *)addr);
 \end{verbatim}
 \begin{verbatim}
   0x73d15433000: 00000000
@@ -152,7 +183,7 @@
       MAP_PRIVATE | MAP_ANON, -1, 0);
   mprotect(addr, 4096, PROT_READ);
   mprotect(addr, 4096, PROT_EXEC);
-  printf("%p: %08x\n", addr, *(int* )addr);
+  printf("%p: %08x\n", addr, *(int *)addr);
 \end{verbatim}
 \begin{verbatim}
   Segmentation fault (core dumped)
@@ -164,10 +195,11 @@
 \subsection{Random Everywhere}
 \begin{frame}{Random Everywhere}
 \begin{itemize}
-  \item arc4random(3)
-  \item arc4random\_uniform(3)
-  \item getentropy(2)
-  \item ELF header .openbsd.randomdata
+  \item \texttt{arc4random(3)}
+  \item \texttt{arc4random\_uniform(3)}
+  \item \texttt{srand\_deterministic(seed)}
+  \item \texttt{getentropy(2)}
+  \item ELF header \texttt{.openbsd.randomdata}
   \item boot /etc/random.seed
 \end{itemize}
 \end{frame}
@@ -176,11 +208,11 @@
 \begin{frame}{Address Space Layout Randomization}
 \begin{enumerate}
   \item shared library mapping
-  \item heap mmap(2)
+  \item heap \texttt{mmap(2)}
   \item stack gap
   \item PIE program text
   \item relink libc
-  \item relink sshd(8)
+  \item relink \texttt{sshd(8)}
 \end{enumerate}
 \end{frame}
 
@@ -188,29 +220,31 @@
 \begin{frame}{Address Space Layout}
 \begin{tikzpicture}
 \path
-    (0,0) node [draw,below,minimum width=2cm,minimum height=6cm] (proc) {}
-    +(0,-0.5) node [draw,minimum width=2cm,fill=red] (stack) {stack}
-    +(0,-1.8) node [draw,minimum width=2cm,fill=green] (jit) {JIT}
-    +(0,-3.1) node [draw,minimum width=2cm,fill=blue] (bss) {bss}
-    +(0,-3.9) node [draw,minimum width=2cm,fill=yellow] (data) {data}
-    +(0,-4.7) node [draw,minimum width=2cm,fill=brown] (rodata) {rodata}
-    +(0,-5.5) node [draw,minimum width=2cm,fill=magenta] (text) {text};
-\draw (stack.east) [<-] -- +(1,0) node [anchor=west] {read/write};
-\draw (jit.east) +(1,0) node [anchor=south west] (mwrite)
-    {mprotect(PROT\_WRITE)} (mwrite.west) [->] -- (jit.east);
-\draw (jit.east) +(1,0) node [anchor=north west] (mexec)
-    {mprotect(PROT\_EXEC)} (mexec.west) [->] -- (jit.east);
-\draw (bss.east) [<-] -- +(1,0) node [anchor=west] {read/write};
-\draw (data.east) [<-] -- +(1,0) node [anchor=west] {read/write};
-\draw (rodata.east) [<-] -- +(1,0) node [anchor=west] {read};
-\draw (text.east) [<-] -- +(1,0) node [anchor=west] {read/exec};
+  (0,0) node [draw,below,minimum width=2cm,minimum height=6cm] (proc) {}
+  +(0,-0.5) node [draw,minimum width=2cm,fill=red] (stack) {stack}
+  +(0,-1.7) node [draw,minimum width=2cm,fill=green] (heap1) {heap1}
+  +(0,-2.8) node [draw,minimum width=2cm,fill=blue] (heap2) {heap2}
+  +(0,-3.7) node [draw,minimum width=2cm,fill=yellow] (lib1) {lib1}
+  +(0,-4.7) node [draw,minimum width=2cm,fill=brown] (lib2) {lib2}
+  +(0,-5.5) node [draw,minimum width=2cm,fill=magenta] (prog) {prog};
+\draw (stack.north east) [<-] -- +(1,0) node [anchor=west] {stack gap};
+\draw (heap1.east) [<-] -- +(1,0) node [anchor=west] {map at random address};
+\path (heap1.east) -- (heap2.east) coordinate [midway] (heap);
+\draw (heap) [<-] -- +(1,0) node [anchor=west] {guard page};
+\draw (heap2.east) [<-] -- +(1,0) node [anchor=west] {unmap after free};
+\path (lib1.east) -- (lib2.east) coordinate [midway] (lib)
+  (lib) +(1,0) node [anchor=west] (ldso) {load randomly};
+\draw (lib1.east) [<-] -- (ldso.west);
+\draw (lib2.east) [<-] -- (ldso.west);
+\draw (prog.south east) [<-] -- +(1,0) node [anchor=west]
+  {position independent executable};
 \end{tikzpicture}
 \end{frame}
 
 \section{System Calls}
 
-\subsection{Mapping Protection}
-\begin{frame}[fragile=singleslide]{Mapping Protection}
+\subsection{Process Mapping}
+\begin{frame}[fragile=singleslide]{Process Mapping}
 \begin{verbatim}
   sleep 1 & procmap $!
 \end{verbatim}
@@ -241,12 +275,12 @@
 \subsection{Dynamic Loader}
 \begin{frame}{Dynamic Loader}
 \begin{itemize}
-  \item init random getentropy(2)
-  \item fix permissions mimmutable(2)
-  \item random layout mmap(2)
-  \item syscall area msyscall(2)
-  \item exec area pinsyscall(2)
-  \item lazy-binding kbind(2)
+  \item init random \texttt{getentropy(2)}
+  \item fix permissions \texttt{mimmutable(2)}
+  \item random layout \texttt{mmap(2)}
+  \item syscall area \texttt{msyscall(2)}
+  \item exec area \texttt{pinsyscall(2)}
+  \item lazy-binding \texttt{kbind(2)}
 \end{itemize}
 \end{frame}
 
@@ -278,8 +312,9 @@
   \item ps -ax -o stat | grep p $\Rightarrow$ 86\% pledged
   \item ps -ax -o stat | grep U $\Rightarrow$ 39\% unveiled
   \item easy to use
+  \item structures design securely
   \item daily violation mail
-  \item lastcomm(1), acct(5), accton(8)
+  \item \texttt{lastcomm(1)}, \texttt{acct(5)}, \texttt{accton(8)}
 \end{itemize}
 \end{frame}
 
@@ -346,12 +381,21 @@
 \subsection{API Changes}
 \begin{frame}{API Changes}
 \begin{itemize}
-  \item strlcpy(3), strlcat(3)
-  \item reallocarray(3)
-  \item explicit\_bzero(3)
-  \item freezero(3)
-  \item malloc\_conceal(3)
-  \item printf(3) without \%n
+  \item \texttt{strlcpy(3)}, \texttt{strlcat(3)}
+  \item \texttt{reallocarray(3)}
+  \item \texttt{explicit\_bzero(3)}
+  \item \texttt{freezero(3)}
+  \item \texttt{malloc\_conceal(3)}
+  \item \texttt{printf(3)} without \%n
+\end{itemize}
+\end{frame}
+
+\subsection{File Descriptors}
+\begin{frame}{File Descriptors}
+\begin{itemize}
+  \item \texttt{getdtablecount(2)}
+  \item \texttt{sendsyslog(2)}
+  \item \texttt{socket(2)} type SOCK\_DNS
 \end{itemize}
 \end{frame}
 
@@ -362,7 +406,7 @@
   \item xonly
   \item map stack
   \item W\^{}X
-  \item otto malloc
+  \item otto@ malloc
 \end{itemize}
 \end{frame}
 
@@ -385,7 +429,7 @@
 \begin{frame}{SSH Agent Library Exploit}
 dlopen(3) 4 libraries:
 \begin{itemize}
-  \item ELF header executable stack 
+  \item ELF header executable stack
   \item init signal handler SIGSEGV
   \item ELF flag NODELETE
   \item on load segmentation fault
